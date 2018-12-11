@@ -7,17 +7,23 @@ library(raster)
 library(fasterize)
 source("R/overline.R")
 
-rf_shape = readRDS("securedata/rf_shape.Rds")
-rf_shape = st_as_sf(rf_shape)
-rf_shape = st_transform(rf_shape, 27700)
-od_raster_attr = read_csv("securedata/od_raster_attributes.csv")
-rf_shape = left_join(rf_shape, od_raster_attr, by = "id")
-rm(od_raster_attr)
-head(rf_shape)
+if(file.exists("securedata/rf_sf.Rds")){
+  rf_shape = readRDS("securedata/rf_sf.Rds")
+}else{
+  rf_shape = readRDS("securedata/rf_shape.Rds")
+  rf_shape = st_as_sf(rf_shape)
+  rf_shape = st_transform(rf_shape, 27700)
+  od_raster_attr = read_csv("securedata/od_raster_attributes.csv")
+  rf_shape = left_join(rf_shape, od_raster_attr, by = "id")
+  rm(od_raster_attr)
+  head(rf_shape)
+  saveRDS(rf_shape,"securedata/rf_sf.Rds")
+}
+
 #rf_test = rf_shape[1:100000,]
 
 message(paste0(Sys.time()," Overlineing"))
-overlined = overline_malcolm(x = rf_shape,
+overlined = overline_malcolm2(x = rf_shape,
                              attrib = c("bicycle","govtarget_slc","dutch_slc"),
                              ncores = 6)
 
