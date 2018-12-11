@@ -9,7 +9,7 @@ line2segments = function(x, ncores = 1){
     geoms = lapply(seqs, function(y){sf::st_linestring(c1[c(y,y+1),c(1,2)])})
   }else{
     cl = parallel::makeCluster(ncores)
-    parallel::clusterExport(cl=cl, varlist=c("c1"))
+    parallel::clusterExport(cl=cl, varlist=c("c1"), envir = environment())
     #parallel::clusterEvalQ(cl, {library(sf)})
     geoms = pbapply::pblapply(seqs, function(y){sf::st_linestring(c1[c(y,y+1),c(1,2)])}, cl = cl)
     parallel::stopCluster(cl)
@@ -56,3 +56,6 @@ overline_malcolm = function(x, attrib, ncores = 1){
   x_nodupe = x_nodupe[,attrib]
   return(x_nodupe)
 }
+
+
+
