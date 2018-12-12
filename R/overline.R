@@ -7,7 +7,7 @@ overline_malcolm2 = function(x, attrib){
     message("Only LINESTRING is supported")
     stop()
   }
-  if("matchingID" %in% names(attrib)){
+  if("matchingID" %in% names(x)){
     message("matchingID is not a permitted column name, please rename that column")
     stop()
   }
