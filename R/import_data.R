@@ -20,12 +20,13 @@ if(file.exists("securedata/rf_sf.Rds")){
   saveRDS(rf_shape,"securedata/rf_sf.Rds")
 }
 
-#rf_test = rf_shape[1:100000,]
+#rf_test = rf_shape[1:1000,]
 
 message(paste0(Sys.time()," Overlineing"))
+# overlined1 = overline_malcolm(x = rf_test,
+#                              attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 1)
 overlined = overline_malcolm2(x = rf_shape,
-                             attrib = c("bicycle","govtarget_slc","dutch_slc"),
-                             ncores = 6)
+                               attrib = c("bicycle","govtarget_slc","dutch_slc"))
 
 saveRDS(overlined,"schools_overlined.Rds")
 
