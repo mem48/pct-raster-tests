@@ -69,8 +69,8 @@ overline_malcolm2 = function(x, attrib){
     stop()
   }
   x = x[,attrib]
-  # Reduce copying by importing function directly
-  ############
+  
+  message(paste0(Sys.time()," constructing segments"))
   c1 = st_coordinates(x) # Convert SF to matrix
   l1 = c1[,3] # Get which line each point is part of
   c1 = c1[,1:2]
@@ -84,12 +84,34 @@ overline_malcolm2 = function(x, attrib){
   c3 = cbind(c1,c2) # make new matrix of start and end coords
   rm(c1,c2)
   c3 = c3[!is.na(c3[,3]),]
+  message(paste0(Sys.time()," removing duplicates"))
   c3_dup = duplicated(c3) # de-duplicate
   c3_nodup = c3[!c3_dup,]
-  matchID = match(data.frame(t(c3)), data.frame(t(c3_nodup))) # make looup 
-  rm(c3,c3_dup)
+  # message(paste0(Sys.time()," making df"))
+  # c3_t = data.frame(t(c3))
+  # c3_nodup_t = data.frame(t(c3_nodup))
+  # message(paste0(Sys.time()," matching"))
+  # message(Sys.time())
+  # matchID = match(c3_t, c3_nodup_t) # make looup 
+  # message(Sys.time())
+  #####
+  c3_df = as.data.frame(c3)
+  names(c3_df) = c("X1","Y1","X2","Y2")
+  c3_nodup_df = as.data.frame(c3_nodup)
+  names(c3_nodup_df) = c("X1","Y1","X2","Y2")
+  c3_nodup_df$matchID = 1:nrow(c3_nodup_df)
+  matchID = dplyr::left_join(c3_df, c3_nodup_df, by = c("X1" = "X1","Y1" = "Y1","X2" = "X2","Y2" = "Y2"))
+  matchID = matchID$matchID
+  rm(c3_df,c3_nodup_df,c3,c3_dup)
+  #message(Sys.time())
+  
+  ####
+  
+  #matchID2 = row.match(c3, c3_nodup)
+  
   
   # Calcualte the attributes
+  message(paste0(Sys.time()," restructuring attributes"))
   x_split = x # extract attributes
   st_geometry(x_split) = NULL
   x_split = as.data.frame(x_split)
@@ -102,10 +124,26 @@ overline_malcolm2 = function(x, attrib){
   x_split$matchingID = NULL
   
   # Make Geometry
+  message(paste0(Sys.time()," building geometry"))
   geoms = pbapply::pblapply(1:nrow(c3_nodup), function(y){sf::st_linestring(matrix(c3_nodup[y,], ncol = 2, byrow = T))})
   rm(c3_nodup)
   geoms = st_as_sfc(geoms, crs = st_crs(x))
-  st_geometry(x_group) = geoms # put together
-  return(x_group)
+  st_geometry(x_split) = geoms # put together
+  rm(geoms)
+  
+  # Recombine in to fewer lines
+  message(paste0(Sys.time()," simplifying geometry"))
+  overlined_simple = x_split %>%
+    group_by_at(attrib) %>%
+    summarise()
+  
+  overlined_simple_l = overlined_simple[st_geometry_type(overlined_simple) == "LINESTRING",]
+  overlined_simple_ml = overlined_simple[st_geometry_type(overlined_simple) == "MULTILINESTRING",]
+  rm(overlined_simple)
+  overlined_simple_ml = st_line_merge(overlined_simple_ml)
+  suppressWarnings(overlined_simple_ml <- st_cast(st_cast(overlined_simple_ml, "MULTILINESTRING"), "LINESTRING"))
+  
+  overlined_fin = rbind(overlined_simple_l,overlined_simple_ml)
+  return(overlined_fin)
 }
 
