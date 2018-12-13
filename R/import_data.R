@@ -20,24 +20,26 @@ if(file.exists("securedata/rf_sf.Rds")){
   saveRDS(rf_shape,"securedata/rf_sf.Rds")
 }
 
-#rf_test = rf_shape[1:1000,]
+rf_test = rf_shape[1:10000,]
 
 message(paste0(Sys.time()," Overlineing"))
 # overlined1 = overline_malcolm(x = rf_test,
 #                              attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 1)
-overlined = overline_malcolm2(x = rf_shape,
-                               attrib = c("bicycle","govtarget_slc","dutch_slc"))
+overlined = overline_malcolm2(x = rf_test,
+                               attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4)
 
 saveRDS(overlined,"schools_overlined.Rds")
 
 message(paste0(Sys.time()," Buffering"))
 overlined_buf = st_buffer(overlined, 10)
 message(paste0(Sys.time()," Rastering"))
+rasterOptions(maxmemory = 1e+11)
 rast = raster::raster(overlined, resolution = 10)
 raster::dataType(rast) <- "INT2U"
 types = c("bicycle","govtarget_slc","dutch_slc")
 for(i in types){
-  rast_tmp = fasterize(overlined, raster = rast, field = i)
+  message(paste0("Doing ",i))
+  rast_tmp = fasterize(overlined_buf, raster = rast, field = i)
   raster::writeRaster(rast_tmp,
                       filename = paste0(i,".tif"),
                       format = "GTiff", 
@@ -46,7 +48,7 @@ for(i in types){
 }
 message(paste0(Sys.time()," Done"))
 
-
-
-#qtm(overlined, lines.col = "dutch_slc", lines.lwd = 3)
-#qtm(rf_test, lines.col = "dutch_slc", lines.lwd = 3)
+# point = st_centroid(overlined_fin[1,])
+# point = st_buffer(point, 100000)
+# qtm(overlined_fin[point,], lines.col = "dutch_slc", lines.lwd = 3)
+# #qtm(rf_test, lines.col = "dutch_slc", lines.lwd = 3)
