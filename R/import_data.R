@@ -32,12 +32,13 @@ saveRDS(overlined,"schools_overlined.Rds")
 
 message(paste0(Sys.time()," Buffering"))
 overlined_buf = st_buffer(overlined, 10)
+overlined_buf = st_transform(overlined_buf, 4326)
 message(paste0(Sys.time()," Rastering"))
 rasterOptions(maxmemory = 1e+11)
 
 types = c("bicycle","govtarget_slc","dutch_slc")
 grid = st_make_grid(overlined_buf, n = c(2,2))
-coltable = c("#000000","#9C9C9C","#FFFF73","#AFFF00","#00FFFF","#30B0FF","#2E5FFF","#0000FF","#FF00C5")
+coltable = c("#FFFFFF","#9C9C9C","#FEFE73","#AFFE00","#00FEFE","#30B0FE","#2E5FFE","#0000FE","#FE00C5")
 #inter = st_intersects(overlined_buf,grid)
 
 for(i in types){
@@ -46,7 +47,7 @@ for(i in types){
   rast = raster::raster(overlined_buf, resolution = 10)
   raster::dataType(rast) <- "INT2U"
   rast = fasterize(overlined_buf_tmp, raster = rast, field = i)
-  rast = raster::RGB(rast, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T)
+  rast = raster::RGB(rast, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA)
   # Save Tiles for main raster
   for(j in 1:length(grid)){
     extent = st_bbox(grid[j])
@@ -56,6 +57,7 @@ for(i in types){
     raster::writeRaster(rast_crop,
                         filename = paste0("rasters/",i,"-10m-",j,".tif"),
                         format = "GTiff",
+                        datatype = "INT1U",
                         overwrite = T)
     rm(rast_crop, extent)
   }
@@ -64,6 +66,7 @@ for(i in types){
   raster::writeRaster(rast_50,
                       filename = paste0("rasters/",i,"-50m.tif"),
                       format = "GTiff",
+                      datatype = "INT1U",
                       overwrite = T)
   rm(rast_50)
   rast_100 = raster::aggregate(rast, fact=10, fun=max, na.rm=T)
@@ -71,6 +74,7 @@ for(i in types){
   raster::writeRaster(rast_50,
                       filename = paste0("rasters/",i,"-100m.tif"),
                       format = "GTiff",
+                      datatype = "INT1U",
                       overwrite = T)
   rm(rast_100)
   
