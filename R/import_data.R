@@ -49,12 +49,13 @@ for(i in types){
   rast = raster::raster(overlined_buf, resolution = 0.0001)
   raster::dataType(rast) <- "INT2U"
   rast = fasterize::fasterize(overlined_buf_tmp, raster = rast, field = i, fun = "sum")
-  rast = raster::RGB(rast, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA)
+  rast_col = raster::RGB(rast, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA, datatype = "INT1U")
+  raster::dataType(rast_col) <- "INT1U"
   # Save Tiles for main raster
   for(j in 1:length(grid)){
     extent = st_bbox(grid[j])
     extent = c(extent[1],extent[3],extent[2],extent[4])
-    rast_crop = raster::crop(rast,extent)
+    rast_crop = raster::crop(rast_col,extent)
     message(paste0(Sys.time()," saving Raster ",i,"-10m-",j))
     raster::writeRaster(rast_crop,
                         filename = paste0("rasters/",i,"-10m-",j,".tif"),
@@ -63,7 +64,10 @@ for(i in types){
                         overwrite = T)
     rm(rast_crop, extent)
   }
+  rm(rast_col)
   rast_50 = raster::aggregate(rast, fact=5, fun=max, na.rm=T)
+  rast_50 = raster::RGB(rast_50, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA, datatype = "INT1U")
+  raster::dataType(rast_50) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-50m"))
   raster::writeRaster(rast_50,
                       filename = paste0("rasters/",i,"-50m.tif"),
@@ -72,13 +76,15 @@ for(i in types){
                       overwrite = T)
   rm(rast_50)
   rast_100 = raster::aggregate(rast, fact=10, fun=max, na.rm=T)
+  rast_100 = raster::RGB(rast_100, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA, datatype = "INT1U")
+  raster::dataType(rast_100) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-100m"))
   raster::writeRaster(rast_100,
                       filename = paste0("rasters/",i,"-100m.tif"),
                       format = "GTiff",
                       datatype = "INT1U",
                       overwrite = T)
-  rm(rast_100)
+  rm(rast_100,rast)
   
 }
 message(paste0(Sys.time()," Done"))

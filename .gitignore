@@ -37,3 +37,7 @@ rsconnect/
 
 #Custom
 securedata/
+rasters/
+tiles/
+schools_overlined.Rds
+schools_overlined.gpkg
