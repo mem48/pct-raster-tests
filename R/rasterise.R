@@ -17,7 +17,8 @@ rm(overlined)
 
 types = c("bicycle","govtarget_slc","dutch_slc")
 grid = st_make_grid(overlined_buf, n = c(2,2))
-coltable = c("#FFFFFF","#9C9C9C","#FEFE73","#AFFE00","#00FEFE","#30B0FE","#2E5FFE","#0000FE","#FE00C5")
+coltable = c("#9C9C9C","#FEFE73","#AFFE00","#00FEFE","#30B0FE","#2E5FFE","#0000FE","#FE00C5")
+breaks = c(1,9,49,99,249,999,1999,999999)
 gc()
 
 for(i in types){
@@ -27,7 +28,7 @@ for(i in types){
   rast = fasterize::raster(overlined_buf, resolution = 10)
   raster::dataType(rast) <- "INT2U"
   rast = fasterize::fasterize(overlined_buf_tmp, raster = rast, field = i, fun = "sum")
-  rast_col = raster::RGB(rast, breaks = c(1,10,50,100,250,500,1000,2000,9999999), col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
+  rast_col = raster::RGB(rast, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
   raster::dataType(rast_col) <- "INT1U"
   # Save Tiles for main raster
   for(j in 1:length(grid)){
@@ -46,7 +47,7 @@ for(i in types){
   
   # Save 50m raster
   rast_50 = raster::aggregate(rast, fact=5, fun=max, na.rm=T)
-  rast_50 = raster::RGB(rast_50, breaks = c(1,10,50,100,250,500,1000,2000,9999999), col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
+  rast_50 = raster::RGB(rast_50, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
   raster::dataType(rast_50) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-50m"))
   raster::writeRaster(rast_50,
@@ -58,7 +59,7 @@ for(i in types){
   
   # Save 100m raster
   rast_100 = raster::aggregate(rast, fact=10, fun=max, na.rm=T)
-  rast_100 = raster::RGB(rast_100, breaks = c(1,10,50,100,250,500,1000,2000,9999999), col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
+  rast_100 = raster::RGB(rast_100, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
   raster::dataType(rast_100) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-100m"))
   raster::writeRaster(rast_100,
