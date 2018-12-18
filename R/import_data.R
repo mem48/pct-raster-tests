@@ -33,15 +33,15 @@ overlined = overline_malcolm2(x = rf_shape,
 saveRDS(overlined,"schools_overlined.Rds")
 
 message(paste0(Sys.time()," Buffering"))
-overlined_buf = st_buffer(overlined, 10)
+overlined_buf = st_buffer(overlined, 10, nQuadSegs = 3)
 overlined_buf = st_transform(overlined_buf, 4326)
 message(paste0(Sys.time()," Rastering"))
 rm(overlined, rf_shape)
 
 types = c("bicycle","govtarget_slc","dutch_slc")
 grid = st_make_grid(overlined_buf, n = c(2,2))
-coltable = c("#FFFFFF","#9C9C9C","#FEFE73","#AFFE01","#00FEFE","#30B0FE","#2E5FFE","#0101FE","#FE01C5")
-#inter = st_intersects(overlined_buf,grid)
+coltable = c("#FFFFFF","#9C9C9C","#FEFE73","#AFFE00","#00FEFE","#30B0FE","#2E5FFE","#0000FE","#FE00C5")
+
 
 for(i in types){
   message(paste0(Sys.time()," Doing ",i))
@@ -49,7 +49,7 @@ for(i in types){
   rast = raster::raster(overlined_buf, resolution = 0.0001)
   raster::dataType(rast) <- "INT2U"
   rast = fasterize::fasterize(overlined_buf_tmp, raster = rast, field = i, fun = "sum")
-  rast_col = raster::RGB(rast, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA, datatype = "INT1U")
+  rast_col = raster::RGB(rast, breaks = c(1,10,50,100,250,500,1000,2000,9999999), col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
   raster::dataType(rast_col) <- "INT1U"
   # Save Tiles for main raster
   for(j in 1:length(grid)){
@@ -65,8 +65,9 @@ for(i in types){
     rm(rast_crop, extent)
   }
   rm(rast_col)
+  # Save 50m raster
   rast_50 = raster::aggregate(rast, fact=5, fun=max, na.rm=T)
-  rast_50 = raster::RGB(rast_50, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA, datatype = "INT1U")
+  rast_50 = raster::RGB(rast_50, breaks = c(1,10,50,100,250,500,1000,2000,9999999), col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
   raster::dataType(rast_50) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-50m"))
   raster::writeRaster(rast_50,
@@ -75,8 +76,9 @@ for(i in types){
                       datatype = "INT1U",
                       overwrite = T)
   rm(rast_50)
+  # Save 100m raster
   rast_100 = raster::aggregate(rast, fact=10, fun=max, na.rm=T)
-  rast_100 = raster::RGB(rast_100, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA, datatype = "INT1U")
+  rast_100 = raster::RGB(rast_100, breaks = c(1,10,50,100,250,500,1000,2000,9999999), col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
   raster::dataType(rast_100) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-100m"))
   raster::writeRaster(rast_100,
