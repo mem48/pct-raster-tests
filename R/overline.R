@@ -2,7 +2,7 @@
 #' #' @param x SF data frame of linestrings
 #' #' @param attrib column name to be summed
 #' 
-overline_malcolm2 = function(x, attrib, ncores = 1){
+overline_malcolm2 = function(x, attrib, ncores = 1, simplify = TRUE){
   if(all(sf::st_geometry_type(x) != "LINESTRING")){
     message("Only LINESTRING is supported")
     stop()
@@ -28,6 +28,10 @@ overline_malcolm2 = function(x, attrib, ncores = 1){
   c3 = cbind(c1,c2) # make new matrix of start and end coords
   rm(c1,c2)
   c3 = c3[!is.na(c3[,3]),]
+  message(paste0(Sys.time()," transposing 'B to A' to 'A to B'"))
+  c3 = split(c3,1:nrow(c3))
+  c3 = pbapply::pblapply(c3, function(y){if(y[1] > y[3]){c(y[3],y[4],y[1],y[2])}else{y}})
+  c3 = matrix(unlist(c3), byrow=TRUE, nrow=length(c3) )
   message(paste0(Sys.time()," removing duplicates"))
   c3_dup = duplicated(c3) # de-duplicate
   c3_nodup = c3[!c3_dup,]
@@ -72,52 +76,57 @@ overline_malcolm2 = function(x, attrib, ncores = 1){
   rm(geoms, x)
   
   # Recombine into fewer lines
-  message(paste0(Sys.time()," simplifying geometry"))
-  if(nrow(x_split) > 1e6){
-    message(paste0("large data detected, using regionalisation"))
-    cents = sf::st_centroid(x_split)
-    grid = sf::st_make_grid(cents, what = "polygons")
-    inter = unlist(st_intersects(cents,grid))
-    x_split$grid = inter
-    rm(cents,grid, inter)
-    # split into a list of df by grid
-    x_split = split(x_split , f = x_split$grid )
-    message(paste0(Sys.time()," regionalisation complete"))
-    if(ncores > 1){
-      cl = parallel::makeCluster(ncores)
-      parallel::clusterExport(cl=cl, varlist=c("attrib"), envir = environment())
-      parallel::clusterEvalQ(cl, {library(sf); library(dplyr) })
-      overlined_simple = pbapply::pblapply(x_split, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
-      parallel::stopCluster(cl)
-      rm(x_split,cl)
-      suppressWarnings(overlined_simple <- dplyr::bind_rows(overlined_simple))
-      overlined_simple = as.data.frame(overlined_simple)
-      overlined_simple = st_sf(overlined_simple)
-      st_crs(overlined_simple) = x_crs
+  if(simplify){
+    message(paste0(Sys.time()," simplifying geometry"))
+    if(nrow(x_split) > 1e6){
+      message(paste0("large data detected, using regionalisation"))
+      cents = sf::st_centroid(x_split)
+      grid = sf::st_make_grid(cents, what = "polygons")
+      inter = unlist(st_intersects(cents,grid))
+      x_split$grid = inter
+      rm(cents,grid, inter)
+      # split into a list of df by grid
+      x_split = split(x_split , f = x_split$grid )
+      message(paste0(Sys.time()," regionalisation complete"))
+      if(ncores > 1){
+        cl = parallel::makeCluster(ncores)
+        parallel::clusterExport(cl=cl, varlist=c("attrib"), envir = environment())
+        parallel::clusterEvalQ(cl, {library(sf); library(dplyr) })
+        overlined_simple = pbapply::pblapply(x_split, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
+        parallel::stopCluster(cl)
+        rm(x_split,cl)
+        suppressWarnings(overlined_simple <- dplyr::bind_rows(overlined_simple))
+        overlined_simple = as.data.frame(overlined_simple)
+        overlined_simple = st_sf(overlined_simple)
+        st_crs(overlined_simple) = x_crs
+      }else{
+        overlined_simple = pbapply::pblapply(x_split, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
+        rm(x_split)
+      }
+      overlined_simple$grid = NULL
     }else{
-      overlined_simple = pbapply::pblapply(x_split, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
+      overlined_simple = x_split %>%
+        group_by_at(attrib) %>%
+        summarise()
       rm(x_split)
     }
-    overlined_simple$grid = NULL
+    
+    #Separate our the linestrings and the mulilinestrings
+    message(paste0(Sys.time()," rejoining segments into linestrings"))
+    geom_types = st_geometry_type(overlined_simple) 
+    overlined_simple_l = overlined_simple[geom_types == "LINESTRING",]
+    overlined_simple_ml = overlined_simple[geom_types == "MULTILINESTRING",]
+    rm(overlined_simple, geom_types)
+    overlined_simple_ml = st_line_merge(overlined_simple_ml)
+    suppressWarnings(overlined_simple_ml <- st_cast(st_cast(overlined_simple_ml, "MULTILINESTRING"), "LINESTRING"))
+    
+    overlined_fin = rbind(overlined_simple_l,overlined_simple_ml)
+    
+    return(overlined_fin)
   }else{
-    overlined_simple = x_split %>%
-      group_by_at(attrib) %>%
-      summarise()
-    rm(x_split)
+    return(x_split)
   }
   
-  #Separate our the linestrings and the mulilinestrings
-  message(paste0(Sys.time()," rejoining segments into linestrings"))
-  geom_types = st_geometry_type(overlined_simple) 
-  overlined_simple_l = overlined_simple[geom_types == "LINESTRING",]
-  overlined_simple_ml = overlined_simple[geom_types == "MULTILINESTRING",]
-  rm(overlined_simple, geom_types)
-  overlined_simple_ml = st_line_merge(overlined_simple_ml)
-  suppressWarnings(overlined_simple_ml <- st_cast(st_cast(overlined_simple_ml, "MULTILINESTRING"), "LINESTRING"))
-  
-  overlined_fin = rbind(overlined_simple_l,overlined_simple_ml)
-  
-  return(overlined_fin)
 }
 
 
