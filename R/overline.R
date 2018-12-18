@@ -55,17 +55,17 @@ overline_malcolm2 = function(x, attrib, ncores = 1){
   
   # Make Geometry
   message(paste0(Sys.time()," building geometry"))
-  if(ncores > 1){
-    c3_nodup = unname(split(c3_nodup, f = 1:nrow(c3_nodup)))
-    cl = parallel::makeCluster(ncores)
-    parallel::clusterExport(cl=cl, varlist=c("attrib"), envir = environment())
-    parallel::clusterEvalQ(cl, {library(sf); library(dplyr) })
-    geoms = pbapply::pblapply(c3_nodup, function(y){sf::st_linestring(matrix(y, ncol = 2, byrow = T))}, cl = cl)
-    parallel::stopCluster(cl)
-    rm(cl)
-  }else{
+  # if(ncores > 1){
+  #   c3_nodup = unname(split(c3_nodup, f = 1:nrow(c3_nodup)))
+  #   cl = parallel::makeCluster(ncores)
+  #   parallel::clusterExport(cl=cl, varlist=c("attrib"), envir = environment())
+  #   parallel::clusterEvalQ(cl, {library(sf); library(dplyr) })
+  #   geoms = pbapply::pblapply(c3_nodup, function(y){sf::st_linestring(matrix(y, ncol = 2, byrow = T))}, cl = cl)
+  #   parallel::stopCluster(cl)
+  #   rm(cl)
+  # }else{
     geoms = pbapply::pblapply(1:nrow(c3_nodup), function(y){sf::st_linestring(matrix(c3_nodup[y,], ncol = 2, byrow = T))})
-  }
+  # }
   rm(c3_nodup, l1, l1_start, matchID)
   geoms = st_as_sfc(geoms, crs = st_crs(x))
   st_geometry(x_split) = geoms # put together
@@ -87,7 +87,7 @@ overline_malcolm2 = function(x, attrib, ncores = 1){
       cl = parallel::makeCluster(ncores)
       parallel::clusterExport(cl=cl, varlist=c("attrib"), envir = environment())
       parallel::clusterEvalQ(cl, {library(sf); library(dplyr) })
-      overlined_simple = pbapply::pblapply(x_list, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
+      overlined_simple = pbapply::pblapply(x_split, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
       parallel::stopCluster(cl)
       rm(x_split,cl)
       suppressWarnings(overlined_simple <- dplyr::bind_rows(overlined_simple))
@@ -95,7 +95,7 @@ overline_malcolm2 = function(x, attrib, ncores = 1){
       overlined_simple = st_sf(overlined_simple)
       st_crs(overlined_simple) = x_crs
     }else{
-      overlined_simple = pbapply::pblapply(x_list, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
+      overlined_simple = pbapply::pblapply(x_split, function(y){y %>% dplyr::group_by_at(attrib) %>%  dplyr::summarise()}, cl = cl)
       rm(x_split)
     }
     overlined_simple$grid = NULL
