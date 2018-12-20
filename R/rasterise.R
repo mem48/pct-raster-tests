@@ -68,6 +68,9 @@ for(i in types){
                       datatype = "INT1U",
                       overwrite = T)
   rm(rast_100,rast)
+  removeTmpFiles(h = 3)
+  gc()
   
 }
 message(paste0(Sys.time()," Done"))
+gc()
