@@ -1,6 +1,8 @@
-#' # Overlay duplicated lines
-#' #' @param x SF data frame of linestrings
-#' #' @param attrib column name to be summed
+#' Overlay duplicated lines
+#' @param x SF data frame of linestrings
+#' @param attrib character, column name to be summed
+#' @param ncores integer, how many cores to use in parallel processing
+#' @param simplify, logical, if TRUE group final segments back into lines 
 #' 
 overline_malcolm2 = function(x, attrib, ncores = 1, simplify = TRUE){
   if(all(sf::st_geometry_type(x) != "LINESTRING")){
