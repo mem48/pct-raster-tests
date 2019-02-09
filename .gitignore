@@ -41,3 +41,4 @@ rasters/
 tiles/
 schools_overlined.Rds
 schools_overlined.gpkg
+.Rproj.user
