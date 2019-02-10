@@ -173,7 +173,7 @@ sl = rf %>%
   top_n(100, all) %>% 
   select(all)
 
-# sl = routes_fast_sf[1:nrow(routes_fast_sf), ]
+sl = routes_fast_sf[1:nrow(routes_fast_sf), ]
 sl$length = 1
 system.time({rnet = overline(sl, "length")})
 system.time({rnet1 = overline(sl, "length", buff_dist = 1)})
@@ -197,3 +197,18 @@ mapview(rnet_id_11)
 sl_intersects_11 = sl[rnet_id_11, ]
 mapview(sl_intersects_11) +
   mapview(rnet_id_11, lwd = 20)
+
+
+foo = overline2(sl_intersects_11,"length", simplify = F)
+mapview(foo, lwd = foo$length)
+
+pts <- st_cast(sl_intersects_11,"POINT")
+pts$ptID <- 1:nrow(pts)
+mapview(pts)
+st_write(sl_intersects_11,"test.geojson")
+write_sf(pts,"test_pts.geojson", delete_dsn = T)
+
+coords1 <- st_coordinates(pts[c(62,127,212,326),])
+coords2 <- st_coordinates(pts[c(63,128,211,325),])
+
+# Prombein with the A to B ordering
