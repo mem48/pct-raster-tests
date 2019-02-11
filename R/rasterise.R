@@ -7,7 +7,7 @@ rasterOptions(maxmemory = 1e+11)
 rasterOptions(tmpdir = "F:/RasterTmp/")
 
 
-overlined = readRDS("schools_overlined.Rds")
+overlined = readRDS("schools_overlined2.Rds")
 
 message(paste0(Sys.time()," Buffering"))
 overlined_buf = st_buffer(overlined, 10, nQuadSegs = 3)
