@@ -23,9 +23,9 @@ if(file.exists("securedata/rf_sf.Rds")){
 }
 
 message(paste0(Sys.time()," Overlineing"))
-overlined = overline_malcolm2(x = rf_shape,
-                               attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 6)
+overlined = overline2(x = rf_shape,
+                      attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 7)
 
-saveRDS(overlined,"schools_overlined.Rds")
+saveRDS(overlined,"schools_overlined2.Rds")
 
 

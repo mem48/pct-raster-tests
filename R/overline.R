@@ -161,21 +161,21 @@ overline2 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   
 }
 
-#' @examples 
-library(sf)
-library(dplyr)
-library(mapview)
-
-region = "london"
-
-u = paste0(
-  "https://github.com/npct/pct-outputs-regional-notR/raw/master/commute/msoa/",
-   region,
-  "/rf.geojson"
-)
-
-sl = read_sf(u)
-system.time({rnet = overline2(sl, "bicycle", ncores = 4)})
-mapview(rnet, lwd = rnet$bicycle / mean(rnet$bicycle))
+#' #' @examples 
+#' library(sf)
+#' library(dplyr)
+#' library(mapview)
+#' 
+#' region = "london"
+#' 
+#' u = paste0(
+#'   "https://github.com/npct/pct-outputs-regional-notR/raw/master/commute/msoa/",
+#'    region,
+#'   "/rf.geojson"
+#' )
+#' 
+#' sl = read_sf(u)
+#' system.time({rnet = overline2(sl, "bicycle", ncores = 4)})
+#' mapview(rnet, lwd = rnet$bicycle / mean(rnet$bicycle))
 
 
