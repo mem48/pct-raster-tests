@@ -3,8 +3,7 @@ library(fasterize)
 library(sf)
 library(tmap)
 tmap_mode("view")
-rasterOptions(maxmemory = 1e+11)
-rasterOptions(tmpdir = "F:/RasterTmp/")
+rasterOptions(maxmemory = 1e+11, tmpdir = "F:/RasterTmp/")
 
 
 overlined = readRDS("schools_overlined2.Rds")
@@ -28,8 +27,9 @@ for(i in types){
   rast = fasterize::raster(overlined_buf, resolution = 10)
   raster::dataType(rast) <- "INT2U"
   rast = fasterize::fasterize(overlined_buf_tmp, raster = rast, field = i, fun = "sum")
-  rast_col = raster::RGB(rast, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
-  raster::dataType(rast_col) <- "INT1U"
+  rast_col = rast
+  # rast_col = raster::RGB(rast, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
+  # raster::dataType(rast_col) <- "INT1U"
   # Save Tiles for main raster
   for(j in 1:length(grid)){
     extent = st_bbox(grid[j])
@@ -47,8 +47,8 @@ for(i in types){
   
   # Save 50m raster
   rast_50 = raster::aggregate(rast, fact=5, fun=max, na.rm=T)
-  rast_50 = raster::RGB(rast_50, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
-  raster::dataType(rast_50) <- "INT1U"
+  # rast_50 = raster::RGB(rast_50, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
+  # raster::dataType(rast_50) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-50m"))
   raster::writeRaster(rast_50,
                       filename = paste0("rasters/",i,"-50m.tif"),
@@ -59,8 +59,8 @@ for(i in types){
   
   # Save 100m raster
   rast_100 = raster::aggregate(rast, fact=10, fun=max, na.rm=T)
-  rast_100 = raster::RGB(rast_100, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
-  raster::dataType(rast_100) <- "INT1U"
+  # rast_100 = raster::RGB(rast_100, breaks = breaks, col = coltable, alpha = F, colNA = NA, datatype = "INT1U")
+  # raster::dataType(rast_100) <- "INT1U"
   message(paste0(Sys.time()," saving Raster ",i,"-100m"))
   raster::writeRaster(rast_100,
                       filename = paste0("rasters/",i,"-100m.tif"),
