@@ -39,14 +39,14 @@ else
   exit 1
 fi
 
-COLOURED=${BARE_NAME}-coloured.tiff
-
-if [ ! -e "$COLOURED" ]; then
-  echo "Colouring in the raster"
-  gdaldem color-relief ${FILE} -nearest_color_entry -alpha colour.txt ${COLOURED}
-fi
+# COLOURED=${BARE_NAME}-coloured.tiff
+# 
+# if [ ! -e "$COLOURED" ]; then
+#   echo "Colouring in the raster"
+#   gdaldem color-relief ${FILE} -nearest_color_entry -alpha colour.txt ${COLOURED}
+# fi
 
 rm -rf ${BARE_NAME}
-gdal2tiles.py ${COLOURED} -w none -z ${LOWER_ZOOM}-${UPPER_ZOOM} ${BARE_NAME}
+gdal2tiles.py ${FILE} -w none -z ${LOWER_ZOOM}-${UPPER_ZOOM} ${BARE_NAME}
 
 upload.sh ${BARE_NAME}
