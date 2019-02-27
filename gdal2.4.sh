@@ -10,5 +10,13 @@ cd /home
 # check you have the right files
 ls
 
+
 # tile the relevant file with n processes
-gdal2tiles.py dutch_slc-10m-merge2.tif -z 5-12 output2.4-5-12 --processes 8
+gdal2tiles.py dutch_slc-10m-merge2.tif -z 8 -w all -r average -a 0.0 output2.4-8 --processes 8
+
+
+# tests ----
+
+# mask layer if necessary (failed)
+# gdal_translate -mask 4 *.tif 
+# gdal2tiles.py dutch_slc-10m-merge2-masked.tif -z 5-6 output2.4-5-6 --processes 8
