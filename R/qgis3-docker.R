@@ -14,14 +14,17 @@ unzip("master.zip")
 
 #
 # in bash:
-gdal2tiles-leaflet-master/gdal2tiles-multiprocess.py -l -p raster -z 5-8 bicycle-100m.tif tiles-multi8
+# gdal2tiles-leaflet-master/gdal2tiles-multiprocess.py -l -p raster -z 5-8 bicycle-100m.tif tiles-multi8
 file.copy("gdal2tiles-leaflet-master/test/index.html", "test.html")
 file.copy("gdal2tiles-leaflet-master/test/index.js", "index.js")
 file.edit("test.html")
 file.edit("index.js")
 
 
-
+# test data
+remotes::install_cran("magick")
+library(magick)
+image_read("dutch_slc-10m-merge2-test.tif")
 
 
 # with qgis3:
