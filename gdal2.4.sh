@@ -11,20 +11,30 @@ cd /home
 ls
 
 # set nodata value
-# gdal_translate -a_nodata 255 dutch_slc-10m-merge2.tif dutch_slc-10m-merge2-nd.tif
-# gdalwarp -srcnodata "255,0,0" -dstnodata "0,0,0" dutch_slc-10m-merge2-test.tif dutch_slc-10m-merge2-test4.tif 
-gdalwarp -srcnodata "255,0,0" -dstnodata "0,0,0" -wo INIT_DEST="255,255,255,0"  dutch_slc-10m-merge2-test.tif dutch_slc-10m-merge2-test4.tif
-gdal_translate -a_nodata "0,0,0" dutch_slc-10m-merge2-test.tif dutch_slc-10m-merge2-test2.tif 
-gdalbuildvrt -srcnodata "255 0 0" outfile.vrt dutch_slc-10m-merge2-test.tif 
-gdal_translate outfile.vrt final.tif
+gdalbuildvrt -srcnodata "255 0 0" -vrtnodata "0 0 0" output.vrt dutch_slc-10m-merge2.tif
+gdal_translate -ot Byte output.vrt output2.vrt
+gdal2tiles.py output.vrt -z 8  --processes 8 output-vrt-8-8
+gdal2tiles.py output.vrt -z 5-12 --processes 8 output-vrt-8-8 --resume
 
+gdalbuildvrt -srcnodata "255 0 0" -vrtnodata "0 0 0" output-bicycle-10m-merge2.vrt bicycle-10m-merge2.tif
+gdal_translate -ot Byte output-bicycle-10m-merge2.vrt output2-bicycle-10m-merge2.vrt
+gdal2tiles.py output2-bicycle-10m-merge2.vrt -z 5-12 --processes 8 bicycle-tiles --resume
 
-# tile the relevant file with n processes
-gdal2tiles.py dutch_slc-10m-merge2.tif -z 8 -srcnodata="255 0 0" --processes 8 output2.4-6-8
-
-
+gdalbuildvrt -srcnodata "255 0 0" -vrtnodata "0 0 0" output-govtarget_slc-10m-merge2.vrt govtarget_slc-10m-merge2.tif
+gdal_translate -ot Byte output-govtarget_slc-10m-merge2.vrt output2-govtarget_slc-10m-merge2.vrt
+gdal2tiles.py output2-govtarget_slc-10m-merge2.vrt -z 5-12 --processes 8 govtarget-tiles --resume
 
 # tests ----
+
+# gdal_translate -a_nodata 255 dutch_slc-10m-merge2.tif dutch_slc-10m-merge2-nd.tif
+# gdalwarp -srcnodata "255,0,0" -dstnodata "0,0,0" dutch_slc-10m-merge2-test.tif dutch_slc-10m-merge2-test4.tif 
+# gdalwarp -srcnodata "255,0,0" -dstnodata "0,0,0" -wo INIT_DEST="255,255,255,0"  dutch_slc-10m-merge2-test.tif dutch_slc-10m-merge2-test4.tif
+# gdal_translate -a_nodata "0,0,0" dutch_slc-10m-merge2-test.tif dutch_slc-10m-merge2-test2.tif 
+# gdalbuildvrt -srcnodata "255 0 0" outfile.vrt dutch_slc-10m-merge2-test.tif 
+# gdal_translate outfile.vrt final.tif
+
+# tile the relevant file with n processes
+# gdal2tiles.py dutch_slc-10m-merge2.tif -z 8 -srcnodata="255 0 0" --processes 8 output2.4-6-8
 
 # mask layer if necessary (failed)
 # gdal_translate -mask 4 *.tif 
