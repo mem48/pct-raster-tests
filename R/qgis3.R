@@ -1,57 +1,59 @@
-#devtools::install_github("jannes-m/RQGIS3")
 library(RQGIS)
-files = list.files("rasters", full.names = T)
+files <- list.files("rasters", full.names = T)
+files <- files[!grepl("merge",files)]
+files <- paste0(getwd(),"/",files)
 set_env(dev = FALSE)
 open_app()
-# coltable = c("#FFFFFF","#9C9C9C","#FEFE73","#AFFE00","#00FEFE","#30B0FE","#2E5FFE","#0000FE","#FE00C5")
-# rast_col = raster::RGB(rast, breaks = c(0,1,10,50,100,250,500,1000,2000), col = coltable, alpha = T, colNA = NA)
-# #rast_col = raster::projectRaster(rast_col, crs= "+proj=longlat +datum=WGS84 +no_defs")
-# #dataType(rast_col) = "INT1U"
-# raster::writeRaster(rast_col,
-#                     filename = paste0("rasters/test11.tif"),
-#                     format = "GTiff",
-#                     overwrite = T,
-#                     datatype = "INT1U"
-#                     #NAflag = 0
-#                     )
 
 
 # merge 10m rasters
 scenarios <- c("bicycle","govtarget_slc","dutch_slc")
-alg_merge <- find_algorithms("gdal:merge", name_only = TRUE)
-params <- get_args_man(alg_merge)
+alg_merge <- find_algorithms("gdalogr:merge", name_only = TRUE)
+#open_help(alg_merge)
+params_merge <- get_args_man(alg_merge)
+
 for(i in 1:3){
+  message(paste0(Sys.time()," merging ",scenarios[i]))
   files_sub <- files[grep(paste0(scenarios[i],"-10m"),files)]
   if(length(files_sub) != 4){message("Not 4 files");stop()}
-  
+  params_merge$INPUT <- paste(files_sub, collapse = ";")
+  params_merge$OUTPUT <- paste0(getwd(),"/rasters/",scenarios[i],"-10m-merge.tif")
+  run_qgis(alg_merge, params = params_merge, load_output = FALSE)
 }
 
 
-r1 = raster("rasters/bicycle-10m-1.tif")
-r2 = raster("rasters/bicycle-10m-2.tif")
-r3 = raster("rasters/bicycle-10m-3.tif")
-r4 = raster("rasters/bicycle-10m-4.tif")
+# Tile rasters
+alg_tiles = find_algorithms("gdal2tiles", name_only = TRUE)
+params_tiles = get_args_man(alg_tiles)
+#params_tiles$INPUT = paste0(getwd(),"/rasters/bicycle-100m.tif")
+params_tiles$PROFILE = "0"
+params_tiles$RESAMPLING = "0"
+params_tiles$NODATA = "255" # Test transparency
+params_tiles$S_SRS = "EPSG:3857"
+#params_tiles$ZOOM = "5-10"
+params_tiles$WEBVIEWER = "leaflet"
+#params_tiles$OUTPUTDIR = paste0(getwd(),"/tiles/test")
+
+dir.create("tiles")
+for(i in 1:3){
+  dir.create(paste0("tiles/",scenarios[i]))
+}
+
+for(i in 1:3){
+  message(paste0(Sys.time()," tiling ",scenarios[i]))
+  message(paste0(Sys.time()," tiling 100m raster"))
+  params_tiles$INPUT = paste0(getwd(),"/rasters/",scenarios[i],"-100m.tif")
+  params_tiles$ZOOM = "1-9"
+  params_tiles$OUTPUTDIR = paste0(getwd(),"/tiles/",scenarios[i])
+  run_qgis(alg_tiles, params = params_tiles, load_output = FALSE)
+  message(paste0(Sys.time()," tiling 50m raster"))
+  params_tiles$INPUT = paste0(getwd(),"/rasters/",scenarios[i],"-50m.tif")
+  params_tiles$ZOOM = "10-11"
+  run_qgis(alg_tiles, params = params_tiles, load_output = FALSE)
+  message(paste0(Sys.time()," tiling 10m raster"))
+  params_tiles$INPUT = paste0(getwd(),"/rasters/",scenarios[i],"-10m-merge.tif")
+  params_tiles$ZOOM = "12-15"
+  run_qgis(alg_tiles, params = params_tiles, load_output = FALSE)
+}
 
 
-
-
-alg = find_algorithms("gdal2tiles", name_only = TRUE)
-
-set_env(dev = FALSE)
-open_app()
-alg = find_algorithms("gdal2tiles", name_only = TRUE)
-#open_help(alg)
-#get_usage(alg)
-params = get_args_man(alg)
-params$INPUT = paste0(getwd(),"/rasters/bicycle-100m.tif")
-params$PROFILE = "0"
-params$RESAMPLING = "0"
-params$NODATA = "255" # Test transparency
-params$S_SRS = "EPSG:3857"
-params$ZOOM = "5-10"
-params$WEBVIEWER = "leaflet"
-params$OUTPUTDIR = paste0(getwd(),"/tiles/test")
-
-foo = run_qgis(alg, 
-               params = params,
-               load_output = FALSE)
