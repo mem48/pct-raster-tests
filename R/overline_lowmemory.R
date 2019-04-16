@@ -8,7 +8,7 @@ overline3 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   if(all(sf::st_geometry_type(x) != "LINESTRING")){
     stop("Only LINESTRING is supported")
   }
-  if("matchingID" %in% names(x)){
+  if("matchingID" %in% attrib){
     stop("matchingID is not a permitted column name, please rename that column")
   }
   
@@ -33,10 +33,10 @@ overline3 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   x = x[l1[l1_start], , drop = FALSE] # repeate attriibutes
   rm(l1, l1_start)
   
-  
+  #c3_old = c3
   message(paste0(Sys.time(), " transposing 'B to A' to 'A to B'"))
-  c3 = split(c3, 1:nrow(c3))
-  c3 = pbapply::pblapply(c3, function(y) {
+  attributes(c3)$dimnames <- NULL
+  c3 <- t(apply(c3, MARGIN = 1, FUN = function(y) {
     if(y[1] != y[3]){
       if (y[1] > y[3]) {
         c(y[3], y[4], y[1], y[2])
@@ -51,31 +51,23 @@ overline3 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
       }
     }
     
-  })
-  c3 = matrix(unlist(c3), byrow = TRUE, nrow = length(c3))
+  }))
+  
   message(paste0(Sys.time(), " removing duplicates"))
-  c3_dup = duplicated(c3) # de-duplicate
-  c3_nodup = c3[!c3_dup, ]
-  c3_df = as.data.frame(c3)
+  c3_df <- as.data.frame(c3)
   names(c3_df) = c("X1", "Y1", "X2", "Y2")
-  c3_nodup_df = as.data.frame(c3_nodup)
-  names(c3_nodup_df) = c("X1", "Y1", "X2", "Y2")
-  c3_nodup_df$matchID = 1:nrow(c3_nodup_df)
-  matchID = dplyr::left_join(c3_df,
-                             c3_nodup_df,
-                             by = c(
-                               "X1" = "X1",
-                               "Y1" = "Y1",
-                               "X2" = "X2",
-                               "Y2" = "Y2"
-                             ))
-  matchID = matchID$matchID
-  rm(c3_df, c3_nodup_df, c3, c3_dup)
+  c3_df <- dplyr::group_by(c3_df, X1, Y1, X2, Y2)
+  matchID <- dplyr::group_indices(c3_df)
+  c3_df$matchingID <- matchID
+  c3_df <- c3_df[!duplicated(c3_df$matchingID),]
+  c3_df <- c3_df[order(c3_df$matchingID),]
+  c3_nodup <- as.matrix(c3_df[,c("X1", "Y1", "X2", "Y2")])
+  rm(c3_df)
   
   # Calcualte the attributes
   message(paste0(Sys.time(), " restructuring attributes"))
   x$matchingID = matchID
-  x = x %>%
+  x <- x %>%
     dplyr::group_by(matchingID) %>%
     dplyr::summarise_all(funs(sum), na.rm = TRUE) %>%
     dplyr::arrange(matchingID)
@@ -90,9 +82,10 @@ overline3 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   # geoms = sf::st_as_sfc(geoms, crs = x_crs)
   # sf::st_geometry(x) = geoms # put together
   # rm(geoms)
-  sf::st_geometry(x) = sf::st_as_sfc(pbapply::pblapply(1:nrow(c3_nodup), function(y) {
+  sf::st_geometry(x) <- sf::st_as_sfc(pbapply::pblapply(1:nrow(c3_nodup), function(y) {
        sf::st_linestring(matrix(c3_nodup[y, ], ncol = 2, byrow = T))
     }), crs = x_crs)
+  
   
   # Recombine into fewer lines
   if(simplify){
