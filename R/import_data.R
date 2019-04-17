@@ -19,6 +19,14 @@ if(file.exists("securedata/rf_sf.Rds")){
   rf_shape = left_join(rf_shape, od_raster_attr, by = "id")
   rm(od_raster_attr)
   head(rf_shape)
+  rf_shape$bicycle[is.na(rf_shape$bicycle)] <- 0
+  rf_shape$govtarget_slc[is.na(rf_shape$govtarget_slc)] <- 0
+  rf_shape$dutch_slc[is.na(rf_shape$dutch_slc)] <- 0
+  rf_shape$all <- rf_shape$bicycle + rf_shape$govtarget_slc + rf_shape$dutch_slc
+  nrow(rf_shape)
+  rf_shape <- rf_shape[rf_shape$all != 0,]
+  nrow(rf_shape)
+  rf_shape$all <- NULL
   saveRDS(rf_shape,"securedata/rf_sf.Rds")
 }
 
@@ -26,6 +34,6 @@ message(paste0(Sys.time()," Overlineing"))
 overlined = overline2(x = rf_shape,
                       attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 7)
 
-saveRDS(overlined,"schools_overlined2.Rds")
-
+saveRDS(overlined,"schools_overlined.Rds")
+st_write(overlined, "schools_overlined.gpkg")
 
