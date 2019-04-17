@@ -2,7 +2,7 @@
 library(sf)
 library(dplyr)
 rf = readRDS("securedata/rf_sf.Rds")
-rf = rf[1:10000,]
+rf = rf[1:500,]
 source("R/overline.R")
 source("R/overline_lowmemory.R")
 rm(overlined3)
@@ -19,11 +19,23 @@ overlined3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")
 
 
 profile <- bench::mark(check = FALSE,
-            #overline2s = overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 1),
-            #overline3s = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 1),
-            overline2ns = overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 1, simplify = F),
-            overline3ns = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 1, simplify = F)
+            r1 = stplanr::overline(sl = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            r2 = stplanr::overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            r3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"))
 )
+profile[,c(1,7,10)]
+
+
+# Check Identical
+r2$geometry <- sf::st_as_text(r2$geometry)
+r3$geometry <- sf::st_as_text(r3$geometry)
+r2 <- as.data.frame(r2)
+r3 <- as.data.frame(r3)
+r2 <- r2[order(r2$geometry), ]
+r3 <- r3[order(r3$geometry), ]
+rownames(r2) <- 1:nrow(r2)
+rownames(r3) <- 1:nrow(r3)
+identical(r2, r3)
 
 
 overline3ns$text <- sf::st_as_text(overline3ns$geometry)
