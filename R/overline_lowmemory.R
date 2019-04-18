@@ -51,7 +51,7 @@
 #' lwd = rnet1$bicycle / mean(rnet1$bicycle)
 #' plot(rnet1, lwd = lwd)
 #' }
-overline2 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
+overline3 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   if(all(sf::st_geometry_type(x) != "LINESTRING")){
     stop("Only LINESTRING is supported")
   }
@@ -170,7 +170,7 @@ overline2 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
       overlined_simple$grid = NULL
     } else{
       message(paste0(Sys.time(), " aggregating flows"))
-      overlined_simple <- dplyr::group_by_at(overlined_simple, attrib)
+      overlined_simple <- dplyr::group_by_at(x, attrib)
       overlined_simple <- dplyr::summarise(overlined_simple)
       rm(x)
     }
