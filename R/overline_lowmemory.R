@@ -115,7 +115,7 @@ overline3 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   x$matchingID = matchID
   x <- x %>%
     dplyr::group_by(matchingID) %>%
-    dplyr::summarise_all(funs(sum), na.rm = TRUE) %>%
+    dplyr::summarise_all(dplyr::funs(sum), na.rm = TRUE) %>%
     dplyr::arrange(matchingID)
   x$matchingID = NULL
   
