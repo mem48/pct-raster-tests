@@ -112,10 +112,8 @@ overline4 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   sf::st_geometry(x) <- sf::st_as_sfc(pbapply::pblapply(1:nrow(coords), function(y) {
        sf::st_linestring(matrix(coords[y,], ncol = 2, byrow = T))
     }), crs = x_crs)
+  rm(coords)
   
-  #head(x)
-  
-  #rm(matchID, c3_nodup)
   # Recombine into fewer lines
   if(simplify){
     
