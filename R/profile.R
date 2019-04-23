@@ -1,32 +1,36 @@
 # Profile
 library(sf)
 library(dplyr)
-rf = readRDS("securedata/rf_sf.Rds")
-rf = rf[1:500,]
-source("R/overline.R")
+#rf = readRDS("securedata/rf_sf.Rds")
+#rf = rf[1:500,]
+rf = pct::get_pct_routes_fast("isle-of-wight", geography = "lsoa")
+#source("R/overline.R")
 source("R/overline_lowmemory.R")
-rm(overlined3)
+source("R/overline_lowmemory2.R")
+#rm(overlined3)
 
 # 
 # profvis::profvis(overlined2 <- overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4))
-profvis::profvis(overlined3 <- overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4))
+#profvis::profvis(overlined3 <- overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4))
 # 
 # 
 
-overlined2 = overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4)
-overlined3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4)
+# overlined2 = overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4)
+# overlined3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"), ncores = 4)
 
 
 
 profile <- bench::mark(check = FALSE,
-            r1 = stplanr::overline(sl = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
-            r2 = stplanr::overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
-            r3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"))
+            #r1 = stplanr::overline(sl = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            #r2 = stplanr::overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            r3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            r4 = overline4(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"))
 )
 profile[,c(1,7,10)]
 
 
 # Check Identical
+r2 = r4
 r2$geometry <- sf::st_as_text(r2$geometry)
 r3$geometry <- sf::st_as_text(r3$geometry)
 r2 <- as.data.frame(r2)
