@@ -51,19 +51,19 @@
 #' lwd = rnet1$bicycle / mean(rnet1$bicycle)
 #' plot(rnet1, lwd = lwd)
 #' }
-overline4 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e5){
-  if(!"sfc_LINESTRING" %in%  class(x$geometry)){
+overline5 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
+  if(all(sf::st_geometry_type(x) != "LINESTRING")){
     stop("Only LINESTRING is supported")
   }
-  if(any(c("1","2","3","4","grid") %in% attrib)){
-    stop("1, 2, 3, 4, grid are not a permitted column names, please rename that column")
+  if("matchingID" %in% attrib){
+    stop("matchingID is not a permitted column name, please rename that column")
   }
   
   x = x[, attrib]
   x_crs = sf::st_crs(x)
   
   message(paste0(Sys.time(), " constructing segments"))
-  c1 = sf::st_coordinates(x)
+  c1 = sf::st_coordinates(x) 
   sf::st_geometry(x) = NULL
   l1 = c1[, 3] # Get which line each point is part of
   c1 = c1[, 1:2]
@@ -110,8 +110,8 @@ overline4 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e5){
   # Make Geometry
   message(paste0(Sys.time(), " building geometry"))
   sf::st_geometry(x) <- sf::st_as_sfc(pbapply::pblapply(1:nrow(coords), function(y) {
-    sf::st_linestring(matrix(coords[y,], ncol = 2, byrow = T))
-  }), crs = x_crs)
+       sf::st_linestring(matrix(coords[y,], ncol = 2, byrow = T))
+    }), crs = x_crs)
   rm(coords)
   
   # Recombine into fewer lines
@@ -119,62 +119,44 @@ overline4 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e5){
     
     message(paste0(Sys.time(), " simplifying geometry"))
     if (nrow(x) > regionalise) {
-      message(paste0("large data detected, using regionalisation ",nrow(x)))
+      message(paste0("large data detected, using regionalisation, nrow = ",nrow(x)))
       suppressWarnings( cents <- sf::st_centroid(x))
       grid <- sf::st_make_grid(cents, what = "polygons")
-      inter <- unlist(lapply(sf::st_intersects(cents, grid), `[[`, 1))
-      x$grid <- inter
-      rm(cents, grid, inter)
-      # split into a list of df by grid
-      x = split(x , f = x$grid)
+      x$grid <- unlist(lapply(sf::st_intersects(cents, grid), `[[`, 1))
+      rm(cents, grid)
       message(paste0(Sys.time(), " regionalisation complete, aggregating flows"))
-      if (ncores > 1) {
-        cl = parallel::makeCluster(ncores)
-        parallel::clusterExport(cl = cl,
-                                varlist = c("attrib"),
-                                envir = environment())
-        parallel::clusterEvalQ(cl, {
-          library(sf)
-          #library(dplyr)
-        })
-        overlined_simple = pbapply::pblapply(x, function(y) {
-          y <- dplyr::group_by_at(y, attrib)
-          y <- dplyr::summarise(y, do_union = FALSE)
-        }, cl = cl)
-        parallel::stopCluster(cl)
-        rm(cl)
-      } else{
-        overlined_simple = pbapply::pblapply(x, function(y) {
-          y <- dplyr::group_by_at(y, attrib)
-          y <- dplyr::summarise(y, do_union = FALSE)
-        })
-      }
-      rm(x)
-      suppressWarnings(overlined_simple <-
-                         dplyr::bind_rows(overlined_simple))
-      overlined_simple = as.data.frame(overlined_simple)
-      overlined_simple = sf::st_sf(overlined_simple)
-      sf::st_crs(overlined_simple) = x_crs
-      overlined_simple$grid = NULL
+      x <- dplyr::group_by_at(x, c(attrib,"grid"))
+      x <- dplyr::summarise(x, do_union = FALSE)
+      x$grid = NULL
     } else{
       message(paste0(Sys.time(), " aggregating flows"))
-      overlined_simple <- dplyr::group_by_at(x, attrib)
-      overlined_simple <- dplyr::summarise(overlined_simple, do_union = FALSE)
-      rm(x)
+      x <- dplyr::group_by_at(x, attrib)
+      x <- dplyr::summarise(x, do_union = FALSE)
     }
     
     #Separate our the linestrings and the mulilinestrings
     message(paste0(Sys.time(), " rejoining segments into linestrings"))
-    overlined_simple <- sf::st_line_merge(overlined_simple)
-    geom_types = sf::st_geometry_type(overlined_simple)
-    overlined_simple_l = overlined_simple[geom_types == "LINESTRING", ]
-    overlined_simple_ml = overlined_simple[geom_types == "MULTILINESTRING", ]
+    x <- sf::st_line_merge(x)
+    geom_types = sf::st_geometry_type(x)
+    overlined_simple_l = x[geom_types == "LINESTRING", ]
+    overlined_simple_ml = x[geom_types == "MULTILINESTRING", ]
+    rm(x)
     suppressWarnings(overlined_simple_ml <-
-                       sf::st_cast(
-                         sf::st_cast(overlined_simple_ml, "MULTILINESTRING"),
-                         "LINESTRING"
-                       ))
+                                           sf::st_cast(
+                                             sf::st_cast(overlined_simple_ml, "MULTILINESTRING"),
+                                            "LINESTRING"
+                                          ))
     
+    #geom_types = sf::st_geometry_type(overlined_simple)
+    #overlined_simple_l = overlined_simple[geom_types == "LINESTRING", ]
+    #overlined_simple_ml = overlined_simple[geom_types == "MULTILINESTRING", ]
+    #rm(overlined_simple, geom_types)
+    #overlined_simple_ml = sf::st_line_merge(overlined_simple_ml)
+    # suppressWarnings(overlined_simple_ml <-
+    #                    sf::st_cast(
+    #                      sf::st_cast(overlined_simple_ml, "MULTILINESTRING"),
+    #                      "LINESTRING"
+    #                    ))
     return(rbind(overlined_simple_l, overlined_simple_ml))
   }else{
     return(x)

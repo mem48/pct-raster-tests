@@ -15,7 +15,7 @@ overline2 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   }
   
   x = x[, attrib]
-  x_crs = st_crs(x)
+  x_crs = sf::st_crs(x)
   
   message(paste0(Sys.time(), " constructing segments"))
   c1 = sf::st_coordinates(x) # Convert SF to matrix
@@ -72,7 +72,7 @@ overline2 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
   # Calcualte the attributes
   message(paste0(Sys.time(), " restructuring attributes"))
   x_split = x # extract attributes
-  st_geometry(x_split) = NULL
+  sf::st_geometry(x_split) = NULL
   x_split = as.data.frame(x_split)
   x_split = x_split[l1[l1_start], , drop = FALSE] # repeate attriibutes
   x_split$matchingID = matchID
@@ -100,7 +100,7 @@ overline2 = function(x, attrib, ncores = 1, simplify = TRUE, regionalise = 1e4){
       message(paste0("large data detected, using regionalisation"))
       suppressWarnings( cents <- sf::st_centroid(x_split))
       grid = sf::st_make_grid(cents, what = "polygons")
-      inter = unlist(sf::st_intersects(cents, grid))
+      inter = unlist(lapply(sf::st_intersects(cents, grid), `[[`, 1))
       x_split$grid = inter
       rm(cents, grid, inter)
       # split into a list of df by grid

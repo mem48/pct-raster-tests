@@ -3,10 +3,12 @@ library(sf)
 library(dplyr)
 #rf = readRDS("securedata/rf_sf.Rds")
 #rf = rf[1:500,]
-rf = pct::get_pct_routes_fast("isle-of-wight", geography = "lsoa")
-#source("R/overline.R")
+rf = pct::get_pct_routes_fast("west-yorkshire", geography = "lsoa")
+#rf = rf[1:000,]
+source("R/overline.R")
 source("R/overline_lowmemory.R")
 source("R/overline_lowmemory2.R")
+source("R/overline_highspeed.R")
 #rm(overlined3)
 
 # 
@@ -22,9 +24,10 @@ source("R/overline_lowmemory2.R")
 
 profile <- bench::mark(check = FALSE,
             #r1 = stplanr::overline(sl = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
-            #r2 = stplanr::overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
-            r3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            r2 = overline2(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
+            #r3 = overline3(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc")),
             r4 = overline4(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"))
+            #r5 = overline5(x = rf, attrib = c("bicycle","govtarget_slc","dutch_slc"))
 )
 profile[,c(1,7,10)]
 
